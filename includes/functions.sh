@@ -162,40 +162,43 @@ installtask() {
 		installpackages)
 			if [[ $dist_id == "Debian" ]]; then
 				if [[ $dist_codename == "jessie" ]]; then
-					if [[ ${httpd_platform} == "apache2" ]]; then
-						webserver_backend="apache2 apache2-utils libapache2-mod-php7.0"
-					else
-						webserver_backend="nginx-extras php7.0-fpm"
-					fi
 					jetty_name="jetty8"
+					php_version="5"
+					if [[ ${httpd_platform} == "apache2" ]]; then
+						webserver_backend="apache2 apache2-utils libapache2-mod-php${php_version}"
+					else
+						webserver_backend="nginx-extras php${php_version}-fpm"
+					fi
 				else
 					echo "$(redb [ERR]) - Your Debian distribution is currently not supported"
 					exit 1
 				fi
 			elif [[ $dist_id == "Ubuntu" ]]; then
 				if [[ $dist_codename == "trusty" ]]; then
+					jetty_name="jetty"
+					php_version="5"
 					if [[ ${httpd_platform} == "apache2" ]]; then
 						echo "$(textb [INFO]) - Adding ondrej/apache2 repository..."
 						echo "deb http://ppa.launchpad.net/ondrej/apache2/ubuntu trusty main" > /etc/apt/sources.list.d/ondrej.list
 						apt-key adv --keyserver keyserver.ubuntu.com --recv E5267A6C > /dev/null 2>&1
 						apt-get -y update >/dev/null
-						webserver_backend="apache2 apache2-utils libapache2-mod-php7.0"
+						webserver_backend="apache2 apache2-utils libapache2-mod-php${php_version}"
 					else
-						webserver_backend="nginx-extras php7.0-fpm"
+						webserver_backend="nginx-extras php${php_version}-fpm"
 					fi
+				elif [[ $dist_codename == "xenial" ]]; then
 					jetty_name="jetty"
-				else if [[ $dist_codename == "trusty" ]]; then
+					php_version="7.0"
 					if [[ ${httpd_platform} == "apache2" ]]; then
 						echo "$(textb [INFO]) - Adding ondrej/apache2 repository..."
 						echo "deb http://ppa.launchpad.net/ondrej/apache2/ubuntu trusty main" > /etc/apt/sources.list.d/ondrej.list
 						apt-key adv --keyserver keyserver.ubuntu.com --recv E5267A6C > /dev/null 2>&1
 						apt-get -y update >/dev/null
-						webserver_backend="apache2 apache2-utils libapache2-mod-php7.0"
+						webserver_backend="apache2 apache2-utils libapache2-mod-php${php_version}"
 					else
-						webserver_backend="nginx-extras php7.0-fpm"
+						webserver_backend="nginx-extras php${php_version}-fpm"
 					fi
-					jetty_name="jetty"
-				else 
+				else
 					echo "$(redb [ERR]) - Your Ubuntu distribution is currently not supported"
 					exit 1
 				fi
@@ -215,8 +218,8 @@ installtask() {
 			fi
 DEBIAN_FRONTEND=noninteractive apt-get --force-yes -y install zip dnsutils python-setuptools libmail-spf-perl libmail-dkim-perl file \
 openssl php-auth-sasl php-http-request php-mail php-mail-mime php-mail-mimedecode php-net-dime php-net-smtp \
-php-net-socket php-net-url php-pear php-soap php7.0 php7.0-cli php7.0-common php7.0-curl php7.0-gd php7.0-imap php-apcu subversion \
-php7.0-intl php7.0-xsl libawl-php php7.0-mcrypt php7.0-mysql php7.0-sqlite libawl-php php7.0-xmlrpc ${database_backend} ${webserver_backend} mailutils pyzor razor \
+php-net-socket php-net-url php-pear php-soap php${php_version} php${php_version}-cli php${php_version}-common php${php_version}-curl php${php_version}-gd php${php_version}-imap php-apc subversion \
+php${php_version}-intl php${php_version}-xsl libawl-php php${php_version}-mcrypt php${php_version}-mysql php${php_version}-sqlite libawl-php php${php_version}-xmlrpc ${database_backend} ${webserver_backend} mailutils pyzor razor \
 postfix postfix-mysql postfix-pcre postgrey pflogsumm spamassassin spamc sudo bzip2 curl mpack opendkim opendkim-tools unzip clamav-daemon \
 python-magic unrar-free liblockfile-simple-perl libdbi-perl libmime-base64-urlsafe-perl libtest-tempdir-perl liblogger-syslog-perl bsd-mailx \
 openjdk-7-jre-headless libcurl4-openssl-dev libexpat1-dev rrdtool mailgraph fcgiwrap spawn-fcgi \
@@ -471,13 +474,13 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 		webserver)
 			mkdir -p /var/www/ 2> /dev/null
 			if [[ ${httpd_platform} == "nginx" ]]; then
-				# Some systems miss the default php7.0-fpm listener, reinstall it now
-				apt-get -o Dpkg::Options::="--force-confmiss" install -y --reinstall php7.0-fpm > /dev/null
+				# Some systems miss the default php${php_version}-fpm listener, reinstall it now
+				apt-get -o Dpkg::Options::="--force-confmiss" install -y --reinstall php${php_version}-fpm > /dev/null
 				rm /etc/nginx/sites-enabled/{000-0-mailcow*,000-0-fufix} 2>/dev/null
 				cp webserver/nginx/conf/sites-available/mailcow /etc/nginx/sites-available/
-				cp webserver/php7.0-fpm/conf/pool/mail.conf /etc/php7.0/fpm/pool.d/mail.conf
-				cp webserver/php7.0-fpm/conf/php-fpm.conf /etc/php7.0/fpm/php-fpm.conf
-				sed -i "/date.timezone/c\php_admin_value[date.timezone] = ${sys_timezone}" /etc/php7.0/fpm/pool.d/mail.conf
+				cp webserver/php${php_version}-fpm/conf/pool/mail.conf /etc/php${php_version}/fpm/pool.d/mail.conf
+				cp webserver/php${php_version}-fpm/conf/php-fpm.conf /etc/php${php_version}/fpm/php-fpm.conf
+				sed -i "/date.timezone/c\php_admin_value[date.timezone] = ${sys_timezone}" /etc/php${php_version}/fpm/pool.d/mail.conf
 				ln -s /etc/nginx/sites-available/mailcow /etc/nginx/sites-enabled/000-0-mailcow 2>/dev/null
 				[[ ! -z $(grep "server_names_hash_bucket_size" /etc/nginx/nginx.conf) ]] && \
 					sed -i "/server_names_hash_bucket_size/c\ \ \ \ \ \ \ \ server_names_hash_bucket_size 64;" /etc/nginx/nginx.conf || \
@@ -495,7 +498,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 				sed -i "s#MAILCOW_TIMEZONE#${sys_timezone}#g" /etc/apache2/sites-available/mailcow.conf
 				a2enmod rewrite ssl headers cgi > /dev/null 2>&1
 			fi
-			mkdir /var/lib/php7.0/sessions 2> /dev/null
+			mkdir /var/lib/php${php_version}/sessions 2> /dev/null
 			cp -R webserver/htdocs/{mail,dav} /var/www/
 			tar xf /var/www/dav/vendor.tar -C /var/www/dav/ ; rm /var/www/dav/vendor.tar
 			find /var/www/{dav,mail} -type d -exec chmod 755 {} \;
@@ -508,7 +511,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 			sed -i "s/my_mailcowuser/${my_mailcowuser}/g" /var/www/mail/inc/vars.inc.php /var/www/dav/server.php
 			sed -i "s/my_mailcowdb/${my_mailcowdb}/g" /var/www/mail/inc/vars.inc.php /var/www/dav/server.php
 			sed -i "s/httpd_dav_subdomain/$httpd_dav_subdomain/g" /var/www/mail/inc/vars.inc.php
-			chown -R www-data: /var/www/{.,mail,dav} /var/lib/php7.0/sessions /var/mailcow/mailbox_backup_env
+			chown -R www-data: /var/www/{.,mail,dav} /var/lib/php${php_version}/sessions /var/mailcow/mailbox_backup_env
 			mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} < webserver/htdocs/init.sql
 			if [[ -z $(mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} -e "SHOW INDEX FROM propertystorage WHERE KEY_NAME = 'path_property';" -N -B) ]]; then
 				mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} -e "CREATE UNIQUE INDEX path_property ON propertystorage (path(600), name(100));" -N -B
@@ -526,7 +529,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 			;;
 		roundcube)
 			mkdir -p /var/www/mail/rc
-			tar zxvf roundcube/inst/${roundcube_version}.tar.gz -C roundcube/inst/
+			tar xf roundcube/inst/${roundcube_version}.tar -C roundcube/inst/
 			cp -R roundcube/inst/${roundcube_version}/* /var/www/mail/rc/
 			if [[ $is_upgradetask != "yes" ]]; then
 				cp -R roundcube/conf/* /var/www/mail/rc/
@@ -552,7 +555,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 		restartservices)
 			[[ -f /lib/systemd/systemd ]] && echo "$(textb [INFO]) - Restarting services, this may take a few seconds..."
 			if [[ ${httpd_platform} == "nginx" ]]; then
-				fpm="php7.0-fpm"
+				fpm="php${php_version}-fpm"
 			else
 				fpm=""
 			fi
@@ -641,11 +644,11 @@ A backup will be stored in ./before_upgrade_$timestamp
 	cp -R /var/www/mail/ before_upgrade_$timestamp/mail_wwwroot
 	mysqldump -u ${my_mailcowuser} -p${my_mailcowpass} ${my_mailcowdb} > backup_mailcow_db.sql 2>/dev/null
 	mysqldump -u ${my_rcuser} -p${my_rcpass} ${my_rcdb} > backup_roundcube_db.sql 2>/dev/null
-	cp -R /etc/{postfix,dovecot,spamassassin,${httpd_platform},fuglu,mysql,php7.0,clamav} before_upgrade_$timestamp/
+	cp -R /etc/{postfix,dovecot,spamassassin,${httpd_platform},fuglu,mysql,php${php_version},clamav} before_upgrade_$timestamp/
 	echo -e "$(greenb "[OK]")"
 	echo -en "\nStopping services, this may take a few seconds... \t\t"
 	if [[ ${httpd_platform} == "nginx" ]]; then
-		fpm="php7.0-fpm"
+		fpm="php${php_version}-fpm"
 	else
 		fpm=""
 	fi
@@ -683,7 +686,7 @@ A backup will be stored in ./before_upgrade_$timestamp
 	installtask spamassassin
 	returnwait "Spamassassin configuration" "Webserver configuration"
 
-	rm -rf /var/lib/php7.0/sessions/*
+	rm -rf /var/lib/php${php_version}/sessions/*
 	mkdir -p /var/mailcow/log
 	mv /var/www/MAILBOX_BACKUP /var/mailcow/mailbox_backup_env 2> /dev/null
 	mv /var/www/PFLOG /var/mailcow/log/pflogsumm.log 2> /dev/null
