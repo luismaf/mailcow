@@ -164,6 +164,8 @@ installtask() {
 				if [[ $dist_codename == "jessie" ]]; then
 					jetty_name="jetty8"
 					php_version="5"
+					openjdk_version="7"
+					apc_version="apc"
 					if [[ ${httpd_platform} == "apache2" ]]; then
 						webserver_backend="apache2 apache2-utils libapache2-mod-php${php_version}"
 					else
@@ -177,6 +179,8 @@ installtask() {
 				if [[ $dist_codename == "trusty" ]]; then
 					jetty_name="jetty"
 					php_version="5"
+					openjdk_version="7"
+					apc_version="apc"
 					if [[ ${httpd_platform} == "apache2" ]]; then
 						echo "$(textb [INFO]) - Adding ondrej/apache2 repository..."
 						echo "deb http://ppa.launchpad.net/ondrej/apache2/ubuntu trusty main" > /etc/apt/sources.list.d/ondrej.list
@@ -189,6 +193,8 @@ installtask() {
 				elif [[ $dist_codename == "xenial" ]]; then
 					jetty_name="jetty"
 					php_version="7.0"
+					openjdk_version="8"
+					apc_version="apcu"
 					if [[ ${httpd_platform} == "apache2" ]]; then
 						echo "$(textb [INFO]) - Adding ondrej/apache2 repository..."
 						echo "deb http://ppa.launchpad.net/ondrej/apache2/ubuntu trusty main" > /etc/apt/sources.list.d/ondrej.list
@@ -218,11 +224,11 @@ installtask() {
 			fi
 DEBIAN_FRONTEND=noninteractive apt-get --force-yes -y install zip dnsutils python-setuptools libmail-spf-perl libmail-dkim-perl file \
 openssl php-auth-sasl php-http-request php-mail php-mail-mime php-mail-mimedecode php-net-dime php-net-smtp \
-php-net-socket php-net-url php-pear php-soap php${php_version} php${php_version}-cli php${php_version}-common php${php_version}-curl php${php_version}-gd php${php_version}-imap php-apc subversion \
+php-net-socket php-net-url php-pear php-soap php${php_version} php${php_version}-cli php${php_version}-common php${php_version}-curl php${php_version}-gd php${php_version}-imap php-${apc_version} subversion \
 php${php_version}-intl php${php_version}-xsl libawl-php php${php_version}-mcrypt php${php_version}-mysql php${php_version}-sqlite libawl-php php${php_version}-xmlrpc ${database_backend} ${webserver_backend} mailutils pyzor razor \
 postfix postfix-mysql postfix-pcre postgrey pflogsumm spamassassin spamc sudo bzip2 curl mpack opendkim opendkim-tools unzip clamav-daemon \
 python-magic unrar-free liblockfile-simple-perl libdbi-perl libmime-base64-urlsafe-perl libtest-tempdir-perl liblogger-syslog-perl bsd-mailx \
-openjdk-7-jre-headless libcurl4-openssl-dev libexpat1-dev rrdtool mailgraph fcgiwrap spawn-fcgi \
+openjdk-${openjdk_version}-jre-headless libcurl4-openssl-dev libexpat1-dev rrdtool mailgraph fcgiwrap spawn-fcgi \
 solr-jetty > /dev/null
 			if [ "$?" -ne "0" ]; then
 				echo "$(redb [ERR]) - Package installation failed"
