@@ -536,7 +536,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 			;;
 		roundcube)
 			mkdir -p /var/www/mail/rc
-			tar xf roundcube/inst/${roundcube_version}.tar -C roundcube/inst/
+			tar xfz roundcube/inst/${roundcube_version}.tar.gz -C roundcube/inst/
 			cp -R roundcube/inst/${roundcube_version}/* /var/www/mail/rc/
 			if [[ $is_upgradetask != "yes" ]]; then
 				cp -R roundcube/conf/* /var/www/mail/rc/
