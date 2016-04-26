@@ -484,7 +484,7 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 				# Some systems miss the default php${php_version}-fpm listener, reinstall it now
 				apt-get -o Dpkg::Options::="--force-confmiss" install -y --reinstall php${php_version}-fpm > /dev/null
 				rm /etc/nginx/sites-enabled/{000-0-mailcow*,000-0-fufix} 2>/dev/null
-				cp webserver/nginx/conf/sites-available/mailcow /etc/nginx/sites-available/
+				cp webserver/nginx/conf/sites-available/mailcow${php_version} /etc/nginx/sites-available/
 				if [[ ${php_version} == "5" ]]; then
 					cp webserver/php-fpm/${php_version}/conf/pool/mail.conf /etc/php${php_version}/fpm/pool.d/mail.conf
 				cp webserver/php-fpm/${php_version}/conf/php-fpm.conf /etc/php${php_version}/fpm/php-fpm.conf
@@ -494,13 +494,13 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 				cp webserver/php-fpm/${php_version}/conf/php-fpm.conf /etc/php/${php_version}/fpm/php-fpm.conf
 				sed -i "/date.timezone/c\php_admin_value[date.timezone] = ${sys_timezone}" /etc/php/${php_version}/fpm/pool.d/mail.conf
 				fi
-				ln -s /etc/nginx/sites-available/mailcow /etc/nginx/sites-enabled/000-0-mailcow 2>/dev/null
+				ln -s /etc/nginx/sites-available/mailcow${php_version} /etc/nginx/sites-enabled/000-0-mailcow 2>/dev/null
 				[[ ! -z $(grep "server_names_hash_bucket_size" /etc/nginx/nginx.conf) ]] && \
 					sed -i "/server_names_hash_bucket_size/c\ \ \ \ \ \ \ \ server_names_hash_bucket_size 64;" /etc/nginx/nginx.conf || \
 					sed -i "/http {/a\ \ \ \ \ \ \ \ server_names_hash_bucket_size 64;" /etc/nginx/nginx.conf
-				sed -i "s/MAILCOW_HOST.MAILCOW_DOMAIN;/${sys_hostname}.${sys_domain};/g" /etc/nginx/sites-available/mailcow
-				sed -i "s/MAILCOW_DAV_HOST.MAILCOW_DOMAIN;/${httpd_dav_subdomain}.${sys_domain};/g" /etc/nginx/sites-available/mailcow
-				sed -i "s/MAILCOW_DOMAIN;/${sys_domain};/g" /etc/nginx/sites-available/mailcow
+				sed -i "s/MAILCOW_HOST.MAILCOW_DOMAIN;/${sys_hostname}.${sys_domain};/g" /etc/nginx/sites-available/mailcow${php_version}
+				sed -i "s/MAILCOW_DAV_HOST.MAILCOW_DOMAIN;/${httpd_dav_subdomain}.${sys_domain};/g" /etc/nginx/sites-available/mailcow${php_version}
+				sed -i "s/MAILCOW_DOMAIN;/${sys_domain};/g" /etc/nginx/sites-available/mailcow${php_version}
 			elif [[ ${httpd_platform} == "apache2" ]]; then
 				rm /etc/apache2/sites-enabled/{mailcow*,000-0-mailcow,000-0-fufix,000-0-mailcow.conf} 2>/dev/null
 				cp webserver/apache2/conf/sites-available/mailcow.conf /etc/apache2/sites-available/
