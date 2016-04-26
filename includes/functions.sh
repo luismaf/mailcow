@@ -261,8 +261,12 @@ DEBIAN_FRONTEND=noninteractive apt-get --force-yes -y install dovecot-common dov
 			;;
 		mysql)
 			if [[ $mysql_useable -ne 1 ]]; then
-				mysql --defaults-file=/etc/mysql/debian.cnf -e "UPDATE mysql.user SET Password=PASSWORD('$my_rootpw') WHERE USER='root'; FLUSH PRIVILEGES;"
-				#mysql --defaults-file=/etc/mysql/debian.cnf -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${my_rootpw}'; FLUSH PRIVILEGES;"
+				if [[ $dist_codename == "xenial" ]]; then
+					mysql --defaults-file=/etc/mysql/debian.cnf -e "SET CREDENTIALS for 'root' to '$my_rootpw'; FLUSH PRIVILEGES;"
+					#mysql --defaults-file=/etc/mysql/debian.cnf -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${my_rootpw}'; FLUSH PRIVILEGES;"
+				else
+					mysql --defaults-file=/etc/mysql/debian.cnf -e "UPDATE mysql.user SET Password=PASSWORD('$my_rootpw') WHERE USER='root'; FLUSH PRIVILEGES;"
+				fi
 			fi
 			mysql --host ${my_dbhost} -u root -p${my_rootpw} -e "DROP DATABASE IF EXISTS ${my_mailcowdb}; DROP DATABASE IF EXISTS $my_rcdb;"
 			mysql --host ${my_dbhost} -u root -p${my_rootpw} -e "CREATE DATABASE ${my_mailcowdb}; GRANT SELECT, UPDATE, DELETE, INSERT ON ${my_mailcowdb}.* TO '${my_mailcowuser}'@'%' IDENTIFIED BY '${my_mailcowpass}';"
