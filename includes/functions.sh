@@ -485,9 +485,15 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 				apt-get -o Dpkg::Options::="--force-confmiss" install -y --reinstall php${php_version}-fpm > /dev/null
 				rm /etc/nginx/sites-enabled/{000-0-mailcow*,000-0-fufix} 2>/dev/null
 				cp webserver/nginx/conf/sites-available/mailcow /etc/nginx/sites-available/
-				cp webserver/php${php_version}-fpm/conf/pool/mail.conf /etc/php${php_version}/fpm/pool.d/mail.conf
-				cp webserver/php${php_version}-fpm/conf/php-fpm.conf /etc/php${php_version}/fpm/php-fpm.conf
+				if [[ ${php_version} == "5" ]]; then
+					cp webserver/php-fpm/${php_version}/conf/pool/mail.conf /etc/php${php_version}/fpm/pool.d/mail.conf
+				cp webserver/php-fpm/${php_version}/conf/php-fpm.conf /etc/php${php_version}/fpm/php-fpm.conf
 				sed -i "/date.timezone/c\php_admin_value[date.timezone] = ${sys_timezone}" /etc/php${php_version}/fpm/pool.d/mail.conf
+				else 
+					cp webserver/php-fpm/${php_version}/conf/pool/mail.conf /etc/php/${php_version}/fpm/pool.d/mail.conf
+				cp webserver/php-fpm/${php_version}/conf/php-fpm.conf /etc/php/${php_version}/fpm/php-fpm.conf
+				sed -i "/date.timezone/c\php_admin_value[date.timezone] = ${sys_timezone}" /etc/php/${php_version}/fpm/pool.d/mail.conf
+				fi
 				ln -s /etc/nginx/sites-available/mailcow /etc/nginx/sites-enabled/000-0-mailcow 2>/dev/null
 				[[ ! -z $(grep "server_names_hash_bucket_size" /etc/nginx/nginx.conf) ]] && \
 					sed -i "/server_names_hash_bucket_size/c\ \ \ \ \ \ \ \ server_names_hash_bucket_size 64;" /etc/nginx/nginx.conf || \
@@ -505,7 +511,11 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 				sed -i "s#MAILCOW_TIMEZONE#${sys_timezone}#g" /etc/apache2/sites-available/mailcow.conf
 				a2enmod rewrite ssl headers cgi > /dev/null 2>&1
 			fi
-			mkdir /var/lib/php5/sessions 2> /dev/null
+			if [[ ${php_version} == "5" ]]; then
+				mkdir /var/lib/php5/sessions 2> /dev/null
+			else
+				mkdir /var/lib/php/sessions 2> /dev/null
+			fi
 			cp -R webserver/htdocs/{mail,dav} /var/www/
 			tar xf /var/www/dav/vendor.tar -C /var/www/dav/ ; rm /var/www/dav/vendor.tar
 			find /var/www/{dav,mail} -type d -exec chmod 755 {} \;
@@ -518,7 +528,11 @@ DatabaseMirror clamav.inode.at" >> /etc/clamav/freshclam.conf
 			sed -i "s/my_mailcowuser/${my_mailcowuser}/g" /var/www/mail/inc/vars.inc.php /var/www/dav/server.php
 			sed -i "s/my_mailcowdb/${my_mailcowdb}/g" /var/www/mail/inc/vars.inc.php /var/www/dav/server.php
 			sed -i "s/httpd_dav_subdomain/$httpd_dav_subdomain/g" /var/www/mail/inc/vars.inc.php
-			chown -R www-data: /var/www/{.,mail,dav} /var/lib/php5/sessions /var/mailcow/mailbox_backup_env
+			if [[ ${php_version} == "5" ]]; then
+				chown -R www-data: /var/www/{.,mail,dav} /var/lib/php5/sessions /var/mailcow/mailbox_backup_env
+			else
+				chown -R www-data: /var/www/{.,mail,dav} /var/lib/php/sessions /var/mailcow/mailbox_backup_env
+			fi
 			mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} < webserver/htdocs/init.sql
 			if [[ -z $(mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} -e "SHOW INDEX FROM propertystorage WHERE KEY_NAME = 'path_property';" -N -B) ]]; then
 				mysql --host ${my_dbhost} -u root -p${my_rootpw} ${my_mailcowdb} -e "CREATE UNIQUE INDEX path_property ON propertystorage (path(600), name(100));" -N -B
@@ -692,8 +706,11 @@ A backup will be stored in ./before_upgrade_$timestamp
 
 	installtask spamassassin
 	returnwait "Spamassassin configuration" "Webserver configuration"
-
-	rm -rf /var/lib/php5/sessions/*
+	if [[ ${php_version} == "5" ]]; then
+		rm -rf /var/lib/php5/sessions/*
+	else
+		rm -rf /var/lib/php/sessions/*
+	fi
 	mkdir -p /var/mailcow/log
 	mv /var/www/MAILBOX_BACKUP /var/mailcow/mailbox_backup_env 2> /dev/null
 	mv /var/www/PFLOG /var/mailcow/log/pflogsumm.log 2> /dev/null
