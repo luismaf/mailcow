@@ -191,7 +191,7 @@ installtask() {
 						webserver_backend="nginx-extras php${php_version}-fpm"
 					fi
 				elif [[ $dist_codename == "xenial" ]]; then
-					jetty_name="jetty"
+					jetty_name="jetty8"
 					php_version="7.0"
 					openjdk_version="8"
 					apc_version="apcu"
